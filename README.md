@@ -52,7 +52,7 @@ The local uninstaller is intended to remove the installed launcher and applicati
 - **Multiple-monitor selection** where supported by the backend.
 - **Wallpaper library and Wallhaven catalog** for finding and managing wallpapers.
 - **Playback controls, autostart, and session restoration.**
-- **Optional desktop recoloring** with an editable four-color palette (Primary, Secondary, Tertiary, Quaternary).
+- Synchronized settings and editable palette (Primary, Secondary, Tertiary, and Quaternary), with optional desktop recoloring.
 - **Custom fonts and cursor themes**, including validated imports.
 - **Replaceable UI sound effects** for windows, tabs, hover, and selection.
 - **System tray resource statistics**, including on-demand RSS, PSS, and CPU sampling.
