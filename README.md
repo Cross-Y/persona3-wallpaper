@@ -1,118 +1,73 @@
-# Persona 3 Wallpaper (Linux beta source)
+Persona 3 Wallpaper
+An animated and static wallpaper manager for Linux, built with Rust and Qt/QML.
 
-A Rust + Qt/QML desktop wallpaper manager for Linux, with animated and static
-wallpapers, per-desktop backend selection, a Wallhaven catalog, optional desktop
-recoloring, and a themed interface.
+Persona 3 Wallpaper is a Linux desktop application with a themed interface, desktop-aware wallpaper backends, a Wallhaven browser, and optional desktop appearance integrations.
+Beta software: This project is still being tested across Linux desktop environments. Some features depend on your compositor or desktop, and installation from source compiles the application on your machine.
 
-## Current functionality
+Quick installation (Linux)
+Clone the repository and run the included per-user installer:
+git clone https://github.com/Cross-Y/persona3-wallpaper.git
+cd persona3-wallpaper
+bash scripts/install-local.sh
+The installer is designed to check for the required build tools and Qt modules, ask before installing missing system dependencies, compile the application, and add Persona 3 Wallpaper to your application launcher.
 
-- Animated and static wallpaper playback through desktop-aware backends.
-- Multiple display selection where the backend supports it.
-- Configurable playback controls, session restoration, and autostart.
-- Synchronized settings and editable palette (Primary, Secondary, Tertiary,
-  and Quaternary). Color integrations are opt-in.
-- Custom fonts and cursor themes; external downloads and imports are validated.
-- Five replaceable window, tab, hover, and select sound effects.
-- System tray with on-demand RSS, PSS, and CPU sampling while hidden.
+After installation, search for Persona 3 Wallpaper in your desktop's application menu.
 
-## Requirements
+Before installing: You need a supported Linux desktop session and a suitable wallpaper backend. Some backends (such as mpvpaper or desktop-specific plugins) are not installed automatically. Support varies by desktop environment; see Compatibility and limitations.
+Check dependencies without installing
+bash scripts/ensure-build-deps.sh --check
+Install an already compiled local build
+bash scripts/install-local.sh --skip-build
+This option expects the application to have been built already.
+Uninstall
+From the repository directory:
+bash scripts/uninstall-local.sh
+The local uninstaller is intended to remove the installed launcher and application files while keeping your personal settings.
+Features
+- Animated and static wallpapers with desktop-aware backends.
+- Multiple-monitor selection where supported by the backend.
+- Wallpaper library and Wallhaven catalog for finding and managing wallpapers.
+- Playback controls, autostart, and session restoration.
+- Optional desktop recoloring with an editable four-color palette (Primary, Secondary, Tertiary, Quaternary).
+- Custom fonts and cursor themes, including validated imports.
+- Replaceable UI sound effects for windows, tabs, hover, and selection.
+- System tray resource statistics, including on-demand RSS, PSS, and CPU sampling.
+- Experimental video optimization that can cache a lower-resolution H.264 copy before applying a wallpaper.
+- Static-image framing with fit, stretch, and crop controls.
+Requirements
+- Linux with a graphical desktop session.
+- Rust and Cargo, a C/C++ build toolchain, and Qt 6 development libraries to compile from source.
+- FFmpeg for video processing, previews, and dynamic color sampling.
+- A compatible wallpaper backend for your desktop environment.
+- Optional: the Qt Multimedia QML module for menu sounds.
+The local installer can help with some build dependencies, but it does not guarantee that every wallpaper backend or desktop integration is available on your distribution.
+Compatibility and limitations
+Wallpaper playback and desktop customization are backend-dependent. The application includes integrations for multiple Linux desktop environments, but real-world testing is still required across distributions, Wayland/X11 sessions, and desktop versions.
 
-- Linux (graphical testing is still required for each supported desktop).
-- Rust/Cargo and the Qt 6 development libraries for building the CXX-Qt app.
-- For menu sounds, the optional Qt Multimedia QML module.
-- FFmpeg for video previews and dynamic color sampling.
-- A wallpaper backend suitable for your desktop; see
-  [Desktop compatibility](docs/LINUX_COMPATIBILITY.md).
+Known beta limitations:
+- Qt graphical smoke tests and long-running memory tests are still needed.
+- Network catalog searches, file imports, and some FFmpeg operations may briefly block the interface.
+- Video optimization and desktop recoloring are experimental.
+- Packaging scripts exist, but prebuilt packages should not be considered verified until they have been built and tested on their target systems.
+If you encounter a problem, please include your Linux distribution, desktop environment/compositor, display server (Wayland or X11), and relevant terminal output when reporting it.
+Prebuilt packages (work in progress)
+The repository contains packaging scripts for Arch/CachyOS (.pkg.tar.zst), Debian/Ubuntu (.deb), and an experimental AppImage. These are not yet guaranteed to be available as downloadable releases.
 
-## Development build
-
-```bash
+Once verified builds are published, they will be listed in the repository's Releases section. Until then, use the source installation instructions above.
+Development
+Run these commands from the repository root:
 python3 -m unittest discover -s tests -v
 cargo check --workspace
 cargo test --workspace
 cargo run -p persona3-wallpaper
-```
+The Python tests mainly check source structure and integration assumptions. They do not replace a successful Rust/Qt build or testing in a real graphical Linux session.
+Settings and data
+- Settings: ~/.config/persona3-wallpaper/settings.json (or XDG_CONFIG_HOME).
+- Imported wallpapers: ~/.local/share/persona3-wallpaper/wallpapers/ (or XDG_DATA_HOME).
+- UI sounds: app/assets/ui/ (replace the files and rebuild).
+License and third-party assets
+The source code is licensed under GPL-3.0-or-later; see LICENSE.
 
-This ZIP contains **source code**, not a redistributable installer. The Python
-suite mainly checks source structure, scripts, and integrations; passing it
-is not a substitute for `cargo check` or real Qt/desktop testing.
+Important: Persona 3 and its related artwork and audio belong to their respective rights holders. The source-code license does not grant permission to redistribute third-party illustrations, icons, music, or sound recordings. Before publishing source archives or binaries publicly, replace any unlicensed proprietary assets with original or properly licensed alternatives.
 
-## Settings and files
-
-- User settings: `~/.config/persona3-wallpaper/settings.json` or `XDG_CONFIG_HOME`.
-- Imported wallpapers: `~/.local/share/persona3-wallpaper/wallpapers/` or `XDG_DATA_HOME`.
-- Optional interface audio: `app/assets/ui/` (replace files, then rebuild).
-- More details: [Architecture](docs/ARCHITECTURE.md),
-  [Dynamic colors](docs/DYNAMIC_COLORS.md), and
-  [Interface audio](docs/MENU_SOUND_EFFECTS.md).
-
-## Stability work in this revision
-
-The settings Qt bridge now delegates to small modules for autostart, desktop
-choices, Hyprland focus events, wallpaper restoration, and process statistics.
-Color processing is split into palette calculation and media frame extraction.
-Persisted settings use an atomic temporary-file rename, and catalog HTTP
-connections are reused. Failed downloads are cleaned up; previews detect
-source modifications. Automatic colors are cached for unchanged wallpapers.
-
-Known remaining validation tasks: Qt graphical smoke tests, long-run RSS/PSS
-sampling, and hands-on desktop compatibility checks. Network catalog searches,
-file imports, and some FFmpeg operations still call synchronous Rust/QML paths
-and may briefly block the interface. These should be profiled on a real Linux
-session before a public beta.
-
-## Licensing and asset rights
-
-Source code uses `GPL-3.0-or-later` (see [`LICENSE`](LICENSE) and Cargo metadata). The title,
-interface artwork, and replacement sound files may have **different owners**.
-Do **not** publish or redistribute proprietary game illustrations or sound
-recordings with the source or binary unless you have permission or a valid
-license. Replace them with original or properly licensed media for public
-releases. Neither this document nor the code audit verifies asset ownership.
-
-## Automatic video optimization (experimental)
-
-When a monitor is smaller than the source video, the engine can transcode a
-cached H.264 copy (for example 4K → 1080p), using FFmpeg in the background.
-The source video remains untouched. Toggle this feature in **Settings →
-Performance → Optimize video for monitor resolution**. See
-[`docs/VIDEO_OPTIMIZATION.md`](docs/VIDEO_OPTIMIZATION.md) for its scope,
-dependencies, cache limits, and the real-desktop verification procedure.
-
-
-## Installable Linux beta builds
-
-The repository now includes a Linux desktop launcher, a per-user installer,
-and packaging scripts for Arch/CachyOS, Debian/Ubuntu, and an experimental
-AppImage. See [Installation & packaging](docs/INSTALL_AND_PACKAGING.md).
-
-On your build machine, run `bash scripts/install-local.sh`, then search for
-**Persona 3 Wallpaper** in your application launcher. You can quit completely
-and reopen it from the launcher. Packagers must still build and test each
-platform's binaries; this source archive does not include a compiled executable.
-
-## Pre-play optimization and image framing
-
-Selecting an oversized video in Library offers **Optimize, then apply** or
-**Play original**. Choosing to optimize keeps the current wallpaper visible
-until FFmpeg finishes writing the cached copy; repeat selections reuse it.
-Static images offer **Crop to fill**, **Fit entire image**, **Stretch to screen**,
-with draggable crop position, zoom and persisted settings. For a native desktop
-with unknown monitor dimensions, the app retains the desktop's default behavior.
-See [Pre-play and image framing](docs/PREPLAY_AND_STATIC_FRAMING.md).
-
-
-### Easy Linux install / dependency preflight
-
-- **Prebuilt beta package:** `bash scripts/install-package.sh /path/to/package.deb`
-  (or `.pkg.tar.zst` / `.AppImage`). For `.deb` and Arch packages, the system
-  package manager resolves missing declared dependencies.
-- **From source:** `bash scripts/install-local.sh` checks for required build
-  tools / Qt modules and **asks for permission** before using the configured
-  system package manager. Check without installing:
-  `bash scripts/ensure-build-deps.sh --check`.
-- **Already compiled:** `bash scripts/install-local.sh --skip-build` installs
-  the executable without checking or installing Rust build dependencies.
-
-See `docs/INSTALL_AND_PACKAGING.md`. Unsupported desktop wallpaper backends
-(e.g. mpvpaper/AUR or compositor plugins) are not installed automatically.
+This project is an independent fan-made application and is not affiliated with or endorsed by Atlus or SEGA.
