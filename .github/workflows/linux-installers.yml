@@ -1,0 +1,156 @@
+name: Linux installers (beta)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  deb:
+    name: Debian / Ubuntu (.deb)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6 and packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake pkg-config dpkg-dev python3 \
+            qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-wayland \
+            qml6-module-qtquick qml6-module-qtquick-controls \
+            qml6-module-qtquick-layouts qml6-module-qtquick-dialogs \
+            qml6-module-qt-labs-platform qml6-module-qtmultimedia \
+            ffmpeg
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run source regression tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Run Rust tests
+        run: cargo test --workspace --locked
+
+      - name: Build release executable
+        run: bash scripts/build-release.sh
+
+      - name: Build Debian package
+        run: bash scripts/build-deb-package.sh --skip-build
+
+      - name: Upload Debian installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: persona3-wallpaper-deb-amd64
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Share Ubuntu executable with AppImage job
+        uses: actions/upload-artifact@v4
+        with:
+          name: persona3-wallpaper-ubuntu-executable
+          path: target/release/persona3-wallpaper
+          if-no-files-found: error
+          retention-days: 1
+
+  arch:
+    name: Arch / CachyOS (.pkg.tar.zst)
+    runs-on: ubuntu-24.04
+    container:
+      image: archlinux:base-devel
+    timeout-minutes: 90
+    steps:
+      - name: Install Arch build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            git rust cargo cmake pkgconf \
+            qt6-base qt6-declarative qt6-multimedia qt6-wayland \
+            ffmpeg python
+
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Build Arch package as unprivileged user
+        run: |
+          useradd -m -s /bin/bash p3builder
+          chown -R p3builder:p3builder "$GITHUB_WORKSPACE"
+          runuser -u p3builder -- bash -c \
+            'cd "$1" && bash scripts/build-arch-package.sh' \
+            bash "$GITHUB_WORKSPACE"
+
+      - name: Upload Arch installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: persona3-wallpaper-arch-x86_64
+          path: dist/*.pkg.tar.zst
+          if-no-files-found: error
+          retention-days: 14
+
+  appimage:
+    name: Portable AppImage (experimental)
+    runs-on: ubuntu-24.04
+    needs: deb
+    timeout-minutes: 45
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6 runtime and packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            curl file patchelf desktop-file-utils \
+            qt6-base-dev qt6-declarative-dev qt6-multimedia-dev qt6-wayland \
+            qml6-module-qtquick qml6-module-qtquick-controls \
+            qml6-module-qtquick-layouts qml6-module-qtquick-dialogs \
+            qml6-module-qt-labs-platform qml6-module-qtmultimedia \
+            ffmpeg
+
+      - name: Download compiled Ubuntu executable
+        uses: actions/download-artifact@v4
+        with:
+          name: persona3-wallpaper-ubuntu-executable
+          path: target/release
+
+      - name: Make downloaded executable runnable
+        run: chmod +x target/release/persona3-wallpaper
+
+      - name: Download linuxdeploy and Qt plugin
+        run: |
+          mkdir -p "$RUNNER_TEMP/p3w-tools"
+          curl --fail --location --retry 3 \
+            --output "$RUNNER_TEMP/p3w-tools/linuxdeploy-x86_64.AppImage" \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl --fail --location --retry 3 \
+            --output "$RUNNER_TEMP/p3w-tools/linuxdeploy-plugin-qt-x86_64.AppImage" \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x "$RUNNER_TEMP/p3w-tools/"*.AppImage
+
+      - name: Build portable AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: |
+          export LINUXDEPLOY="$RUNNER_TEMP/p3w-tools/linuxdeploy-x86_64.AppImage"
+          export LINUXDEPLOY_QT="$RUNNER_TEMP/p3w-tools/linuxdeploy-plugin-qt-x86_64.AppImage"
+          if command -v qmake6 >/dev/null 2>&1; then export QMAKE="$(command -v qmake6)"; fi
+          bash scripts/build-appimage.sh --skip-build
+
+      - name: Upload portable installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: persona3-wallpaper-appimage-x86_64-experimental
+          path: dist/*.AppImage
+          if-no-files-found: error
+          retention-days: 14
