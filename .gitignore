@@ -1,0 +1,14 @@
+/target/
+/dist/
+/build/
+*.AppImage
+*.deb
+*.pkg.tar.zst
+.env
+.env.*
+!.env.example
+*.log
+__pycache__/
+.DS_Store
+
+/tmp/

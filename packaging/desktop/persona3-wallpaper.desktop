@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Persona 3 Wallpaper
+GenericName=Wallpaper Manager
+Comment=Manage animated and static Linux desktop wallpapers
+Exec=persona3-wallpaper
+Icon=persona3-wallpaper
+Terminal=false
+Categories=Settings;Utility;
+StartupNotify=true
+Keywords=wallpaper;background;animated;desktop;

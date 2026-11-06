@@ -1,0 +1,10 @@
+
+[package]
+name = "p3w-platform"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde_json = "1.0"
+libc = "0.2"
